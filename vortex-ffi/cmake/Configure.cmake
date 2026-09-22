@@ -252,6 +252,13 @@ endfunction()
 # the public Vortex C++ target.
 block(SCOPE_FOR VARIABLES)
     _vortex_resolve_cargo_profile(_configuration _cargo_profile _cargo_artifact_directory)
+    # rustc links build scripts and proc macros through the C driver; forward CMake's C linker
+    # selection verbatim. The launcher does not expand LINKER: and SHELL: prefixes.
+    set(_rust_linker_flags "${CMAKE_C_USING_LINKER_${CMAKE_LINKER_TYPE}}")
+    if(_rust_linker_flags MATCHES "(^|;)(LINKER|SHELL):")
+        message(FATAL_ERROR "CMAKE_LINKER_TYPE=${CMAKE_LINKER_TYPE} needs plain driver flags, "
+            "but CMAKE_C_USING_LINKER_${CMAKE_LINKER_TYPE} is '${_rust_linker_flags}'")
+    endif()
 
     set(_cuda_arch_flags "")
     set(_cuda_host_compiler "")
@@ -357,6 +364,7 @@ block(SCOPE_FOR VARIABLES)
             "-DVORTEX_RUSTFLAGS=${_rustflags}"
             "-DVORTEX_CFLAGS=${_native_c_flags}"
             "-DVORTEX_CXXFLAGS=${_native_cxx_flags}"
+            "-DVORTEX_RUST_LINKER_FLAGS=${_rust_linker_flags}"
             "-DVORTEX_C_COMPILER=${CMAKE_C_COMPILER}"
             "-DVORTEX_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
             "-DVORTEX_C_COMPILER_ARG1=${CMAKE_C_COMPILER_ARG1}"
