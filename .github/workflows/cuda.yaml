@@ -45,6 +45,8 @@ jobs:
               - "vortex-test/**"
               - "pyproject.toml"
               - "uv.lock"
+              - "Cargo.toml"
+              - "Cargo.lock"
               - ".github/workflows/**"
 
   cuda-build-lint:
@@ -71,6 +73,8 @@ jobs:
             cargo build --profile ci --locked --all-features --all-targets
             -p vortex-cuda -p vortex-cuda-ffi -p vortex-cub -p vortex-nvcomp
             -p gpu-scan-cli -p vortex-test-e2e-cuda -p vortex-python-cuda
+      - name: Verify generated CUDA FFI header is up to date
+        run: git --no-pager diff --exit-code -- vortex-cuda/ffi/cinclude/vortex_cuda.h
       - name: Clippy CUDA crates
         run: |
           cargo clippy --profile ci --locked --all-features --all-targets \
