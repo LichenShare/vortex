@@ -10,10 +10,24 @@ use vortex_array::dtype::DecimalType;
 use vortex_array::dtype::i256;
 use vortex_buffer::Buffer;
 
+/// Decimal widths under test, with the input plus output bytes each row moves.
+///
+/// Splitting reads one decimal and writes a most significant part plus lower parts of the same
+/// total width, and assembly does the reverse, so both move twice the decimal's size per row.
+const WIDTHS: [(DecimalType, usize); 2] = [
+    (DecimalType::I128, 2 * size_of::<i128>()),
+    (DecimalType::I256, 2 * size_of::<i256>()),
+];
+
+/// Working set per kernel iteration.
+const WORKING_SET_BYTES: [usize; 2] = [256 * 1024, 1024 * 1024];
+
 pub(super) fn cases() -> Vec<(DecimalType, usize)> {
-    [DecimalType::I128, DecimalType::I256]
+    WIDTHS
         .into_iter()
-        .flat_map(|values_type| [1_024, 8_192].map(|len| (values_type, len)))
+        .flat_map(|(values_type, bytes_per_row)| {
+            WORKING_SET_BYTES.map(|bytes| (values_type, bytes / bytes_per_row))
+        })
         .collect()
 }
 
